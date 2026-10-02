@@ -3,13 +3,26 @@
   "version": "0.1.0",
   "private": true,
   "description": "NetKit authorized-network monitoring platform (Phase 1 network engine)",
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "check": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node --test dist/packages/network-engine/test/**/*.test.js",
-    "cli": "npm run build && node dist/apps/cli/src/netkit.js"
+    "cli": "npm run build && node dist/apps/cli/src/netkit.js",
+    "adb-version": "cd platform-tools && adb.exe version",
+    "dev": "nodemon notification.js"
   },
-  "devDependencies": {},
-  "engines": { "node": ">=22.0.0" }
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "nodemon": "^3.1.14"
+  }
 }
