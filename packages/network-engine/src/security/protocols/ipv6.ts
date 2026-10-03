@@ -1,0 +1,3 @@
+export interface Ipv6Packet { srcIp: string; dstIp: string; hopLimit: number; nextHeader: number; payloadOffset: number; }
+export function parseIpv6(packet: Buffer): Ipv6Packet | undefined { if (packet.length < 40 || packet[0] >>> 4 !== 6) return undefined; return { srcIp: address(packet.subarray(8, 24)), dstIp: address(packet.subarray(24, 40)), hopLimit: packet[7], nextHeader: packet[6], payloadOffset: 40 }; }
+function address(value: Buffer): string { const parts: string[] = []; for (let index = 0; index < 16; index += 2) parts.push(value.readUInt16BE(index).toString(16)); return parts.join(":"); }
