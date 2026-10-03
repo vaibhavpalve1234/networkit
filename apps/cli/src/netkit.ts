@@ -4,14 +4,12 @@ import { Resolver } from "node:dns/promises";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { InMemoryFindingStore, JsonSecurityLogger, loadSecurityConfig, PcapCommandCapture, PcapStreamDecoder, SecurityEngine } from "../../../packages/network-engine/src/security";
 
 const engine = new LocalNetworkEngine();
 const [command, ...args] = process.argv.slice(2);
 
 async function main(): Promise<void> {
   switch (command) {
-    case "security": await security(args); return;
     case "health":
       print({ status: "ok", ...(await getHealth(engine)) });
       return;
@@ -59,14 +57,6 @@ async function main(): Promise<void> {
       usage();
       process.exitCode = command ? 1 : 0;
   }
-}
-
-async function security(args: string[]): Promise<void> {
-  const [action, value] = args; const store = new InMemoryFindingStore(); const monitor = new SecurityEngine(loadSecurityConfig(), store, new JsonSecurityLogger());
-  if (action === "scan") { if (!value) throw new Error("Usage: security scan <classic-pcap-file>"); const data = await readFile(value); new PcapStreamDecoder(loadSecurityConfig().maxPacketBytes, async (frame, timestamp) => { await monitor.ingestFrame(frame, timestamp); }).push(data); await new Promise((resolve) => setTimeout(resolve, 0)); print({ mode: "offline-pcap", stats: monitor.stats(), findings: await monitor.recentFindings(100) }); return; }
-  if (action === "live") { const capture = new PcapCommandCapture(); await capture.start({ interface: process.env.PACKET_CAPTURE_INTERFACE, maxPacketBytes: loadSecurityConfig().maxPacketBytes }, async (frame, timestamp) => { await monitor.ingestFrame(frame, timestamp, process.env.PACKET_CAPTURE_INTERFACE); }); print({ mode: "live", interface: process.env.PACKET_CAPTURE_INTERFACE, status: "capturing", stop: "Ctrl+C" }); return; }
-  if (action === "stats") { print(monitor.stats()); return; }
-  throw new Error("Usage: security scan <classic-pcap-file> | security live | security stats");
 }
 
 async function scan(): Promise<Record<string, unknown>> {
