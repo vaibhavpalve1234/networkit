@@ -1,0 +1,8 @@
+import { ArpAnalyzer } from "../detection/arpAnalyzer"; import type { SecurityConfig } from "../config"; import type { SecurityLogger } from "../logger"; import { normalizePacket } from "../protocols/normalize"; import type { FindingStore, PacketInfo, SecurityFinding } from "../types";
+export class SecurityEngine { private readonly arp: ArpAnalyzer; private packets = 0; private malformed = 0;
+  constructor(private readonly config: SecurityConfig, private readonly store: FindingStore, private readonly logger: SecurityLogger) { this.arp = new ArpAnalyzer(config); }
+  async ingestFrame(frame: Buffer, timestamp = Date.now(), interfaceName?: string): Promise<PacketInfo | undefined> { if (frame.length > this.config.maxPacketBytes) { this.malformed += 1; this.logger.warn("packet_dropped", { reason: "oversize", length: frame.length }); return undefined; } const packet = normalizePacket(frame, timestamp, this.config.maxPacketBytes, interfaceName); if (!packet) { this.malformed += 1; return undefined; } this.packets += 1; const finding = this.arp.inspect(packet); if (finding) await this.record(finding); return packet; }
+  async recentFindings(limit = 100): Promise<SecurityFinding[]> { return this.store.getRecent(limit); }
+  stats(): Record<string, number> { return { packets: this.packets, malformedPackets: this.malformed }; }
+  private async record(finding: SecurityFinding): Promise<void> { await this.store.add(finding); this.logger.warn("security_finding", { findingId: finding.id, category: finding.category, severity: finding.severity, sourceIp: finding.sourceIp, destinationIp: finding.destinationIp }); }
+}

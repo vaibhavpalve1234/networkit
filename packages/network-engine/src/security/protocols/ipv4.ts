@@ -1,0 +1,3 @@
+export interface Ipv4Packet { srcIp: string; dstIp: string; ttl: number; protocol: number; payloadOffset: number; fragmented: boolean; }
+export function parseIpv4(packet: Buffer): Ipv4Packet | undefined { if (packet.length < 20 || packet[0] >>> 4 !== 4) return undefined; const headerLength = (packet[0] & 15) * 4; if (headerLength < 20 || packet.length < headerLength) return undefined; return { srcIp: ip(packet.subarray(12, 16)), dstIp: ip(packet.subarray(16, 20)), ttl: packet[8], protocol: packet[9], payloadOffset: headerLength, fragmented: (packet.readUInt16BE(6) & 0x3fff) !== 0 }; }
+const ip = (value: Buffer): string => [...value].join(".");

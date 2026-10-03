@@ -1,0 +1,3 @@
+export interface EthernetFrame { srcMac: string; dstMac: string; etherType: number; payloadOffset: number; }
+export function parseEthernet(frame: Buffer): EthernetFrame | undefined { if (frame.length < 14) return undefined; let etherType = frame.readUInt16BE(12); let payloadOffset = 14; if (etherType === 0x8100 || etherType === 0x88a8) { if (frame.length < 18) return undefined; etherType = frame.readUInt16BE(16); payloadOffset = 18; } return { dstMac: mac(frame.subarray(0, 6)), srcMac: mac(frame.subarray(6, 12)), etherType, payloadOffset }; }
+function mac(value: Buffer): string { return [...value].map((octet) => octet.toString(16).padStart(2, "0")).join(":"); }
